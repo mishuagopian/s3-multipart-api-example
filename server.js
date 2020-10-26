@@ -3,7 +3,10 @@ const cuid = require('cuid');
 
 const s3 = new AWS.S3({
   accessKeyId: 'ACCESS_KEY_ID',
-  secretAccessKey: 'SECRET_ACCESS_KEY'
+  secretAccessKey: 'SECRET_ACCESS_KEY',
+  region: 'us-west-2',
+  useAccelerateEndpoint: true,
+  signatureVersion: 'v4'
 });
 
 const params = {
