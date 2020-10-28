@@ -13,7 +13,7 @@ exports.handler = async (event) => {
   const parts = event.queryStringParameters && parseInt(event.queryStringParameters.parts);
   const filename = event.queryStringParameters && event.queryStringParameters.filename;
 
-  if (!parts || parts <= 1 || !filename) {
+  if (!parts || parts < 1 || !filename) {
     return {
       statusCode: 400,
       body: `Los parámetros parts y filename son requeridos. ${JSON.stringify(event)}`
