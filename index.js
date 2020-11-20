@@ -13,7 +13,7 @@ exports.handler = async (event) => {
   const parts = event.queryStringParameters && parseInt(event.queryStringParameters.parts);
   const filename = event.queryStringParameters && event.queryStringParameters.filename;
 
-  if (!parts || parts < 1 || !filename) {
+  if (!parts || !filename) {
     return {
       statusCode: 400,
       body: `Los parámetros parts y filename son requeridos. ${JSON.stringify(event)}`
@@ -28,22 +28,32 @@ exports.handler = async (event) => {
     Key: `uploads/activities/${cuid()}/${filename}`
   };
 
-  console.log('creating multipart');
+  let urls;
 
-  const urls = await s3.createMultipartUpload(params).promise().then(multipart_upload => {
-    params.UploadId = multipart_upload.UploadId;
-    console.log(`created multipart for ${JSON.stringify(params)}`);
+  if (parts == 1) {
 
-    const promises = [...Array(parts).keys()]
-      .map(partNo => s3.getSignedUrlPromise('uploadPart', {
-        ...params,
-        PartNumber: partNo + 1
-      }));
+    console.log('creating signedUrl for PUT operation');
+    urls = await s3.getSignedUrlPromise('putObject', { ...params, Expires: 600 }).then(url => [url]);
 
-    console.log('created promises for signed urls');
+  } else {
+    console.log('creating multipart');
 
-    return Promise.all(promises).then(res => res.reduce((acum, url) => [...acum, url], []));
-  });
+    urls = await s3.createMultipartUpload(params).promise().then(multipart_upload => {
+      params.UploadId = multipart_upload.UploadId;
+      console.log(`created multipart for ${JSON.stringify(params)}`);
+
+      const promises = [...Array(parts).keys()]
+        .map(partNo => s3.getSignedUrlPromise('uploadPart', {
+          ...params,
+          PartNumber: partNo + 1
+        }));
+
+      console.log('created promises for signed urls');
+
+      return Promise.all(promises).then(res => res.reduce((acum, url) => [...acum, url], []));
+    });
+
+  }
 
   console.log(urls);
 
